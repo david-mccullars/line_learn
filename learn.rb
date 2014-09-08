@@ -20,20 +20,32 @@ class CharacterSet < Hash
   end
 
   def color_map
-    @color_map ||= begin
-      color_map = {}
-      bit_count_per_color = (Math.log(self.size / 3.0) / Math.log(2)).ceil
-      bit_count_per_color = 1 if bit_count_per_color < 1
-      self.keys.sort.each_with_index do |name, n|
-        bits = sprintf("%0.#{3 * bit_count_per_color}b", n + 1).chars.each_slice(3)
-        bits = 3.times.map { |i| bits.map { |a| a[i] } }
-        rgb = bits.map do |v|
-          v = v.join.to_i(2)
-          v == 0 ? 0 : (255.0 - 200.0 * v / bit_count_per_color).to_i
-        end
-        color_map[name] = HighLine::Style.rgb(*rgb)
+    @color_map ||= Hash[self.keys.sort.zip(styles)]
+  end
+
+  private
+
+  def styles
+    @styles ||= style_bits.map do |bits|
+      rgb = bits.map do |v|
+        v = v.join.to_i(2)
+        v == 0 ? 0 : (255.0 - 200.0 * v / bit_count_per_color).to_i
       end
-      color_map
+      HighLine::Style.rgb(*rgb)
+    end
+  end
+
+  def style_bits
+    @style_bits ||= self.size.times.map do |n|
+      bits = sprintf("%0.#{3 * bit_count_per_color}b", n + 1).chars.each_slice(3)
+      3.times.map { |i| bits.map { |a| a[i] } }
+    end
+  end
+
+  def bit_count_per_color
+    @bit_count_per_color ||= begin
+      v = (Math.log(self.size / 3.0) / Math.log(2)).ceil
+      v < 1 ? 1 : v
     end
   end
 
@@ -286,51 +298,6 @@ class ScriptPractice
     b / BUCKET_SCALE
   end
 
-  def normalize_and_adjust_scores(method)
-    # PHASE 0:  sort score values
-    values = lines_with_scores.map(&(method)).flatten.sort
-
-    # PHASE 1:  bundle values into "buckets"
-    buckets = values.map { |s| bucketize(s) }.uniq.sort
-
-    # PHASE 2:  map differences in a relative manner
-    differences = (buckets.size - 1).times.map { |i| buckets[i + 1] - buckets[i] }
-    difference_map = Hash[differences.uniq.sort.each_with_index.to_a]
-
-    # PHASE 3:  map values by difference map in a relative manner
-    values_map = {}
-    current, current_bucket, new_time = nil
-    values.each do |t|
-      prev, current = current, t
-      prev_bucket, current_bucket = current_bucket, bucketize(t)
-      new_time = if prev.nil?
-                   0.0
-                 elsif delta = difference_map[(current_bucket - prev_bucket).abs]
-                   new_time + unbucketize(delta * DELTA_SCALE + 1)
-                 else
-                   new_time + current - prev
-                 end
-      values_map[current] = new_time
-    end
-
-    # PHASE 4:  normalize time map
-    values_map.keys.each do |k|
-      values_map[k] = 2.0 * values_map[k] / new_time
-    end
-
-    # PHASE 5:  create normalized/adjusted scores using new values map
-    lines_with_scores.inject({}) do |map, line|
-      new_values_for_line =
-      case to_adjust = line.send(method)
-      when Array
-        to_adjust.map { |t| values_map[t] }
-      when Float
-        values_map[to_adjust]
-      end
-      map.merge! line => new_values_for_line
-    end
-  end
-
   WORD_RANGE = (1.0..10.0)
   LINE_RANGE = (0.5..5.0)
 
@@ -360,12 +327,10 @@ class ScriptPractice
   end
 
   def normalized_word_scores
-    #@normalized_word_scores ||= normalize_and_adjust_scores(:word_times)
     @normalized_word_scores ||= normalize_scores(:word_times, WORD_RANGE)
   end
 
   def normalized_line_scores
-    #@normalized_line_scores ||= normalize_and_adjust_scores(:avg)
     @normalized_line_scores ||= normalize_scores(:avg, LINE_RANGE)
   end
 
@@ -396,6 +361,8 @@ end
 
 if $0 == __FILE__
   practice = ScriptPractice.new(Dir[*ARGV].first)
+practice.script.introduce
+exit 0
   if ARGV.last == '--dummy'
     practice.learn(ARGV, :dummy_data => true)
   else
