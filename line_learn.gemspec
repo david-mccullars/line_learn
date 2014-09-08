@@ -8,9 +8,9 @@ Gem::Specification.new do |spec|
   spec.version       = LineLearn::VERSION
   spec.authors       = ["David McCullars"]
   spec.email         = ["dmccullars@bloomfire.com"]
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
-  spec.homepage      = ""
+  spec.description   = %q{Gameified tool for learning lines}
+  spec.summary       = %q{Gameified tool for learning lines}
+  spec.homepage      = "https://github.com/david-mccullars/line_learn"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
