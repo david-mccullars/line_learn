@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+require 'zlib'
+require 'fileutils'
+
+def usage
+  puts "usage: pdf2lines <FILE> <CHAR>"
+  exit 1
+end
+
+FILE = File.expand_path(ARGV.shift) rescue usage
+CHAR = ARGV.shift.upcase rescue usage
+
+def process_text(s)
+  s.gsub('\(', '[[[[[').gsub('\)', ']]]]]')
+   .scan(/\((.*?)\)/).join
+   .gsub('[[[[[', '(').gsub(']]]]]', ')')
+   .force_encoding('binary')
+   .gsub(/\xD1/n, ' -- ')
+   .gsub(/\xD2/n, '"')
+   .gsub(/\xD3/n, '"')
+   .gsub(/\xD5/n, "'")
+   .force_encoding('UTF-8')
+end
+
+all = File.binread(FILE)
+scenes = {}
+lines = nil
+all.scan(/\nstream\n(.*?)\nendstream\n/m) do
+  text = Zlib::Inflate.inflate($1)
+  text.scan(/(Tc|BT)\s\d+\s\S+\s\S+\s\S+\s(\d+)\s\S+\s.*?\/TT\d\s1\sTf\s(.*?)\sT[jJ]/m) do
+    indent = $2.to_i
+    s = process_text($3)
+    case indent
+    when 90, 243, 222, 72, 271, 271, 253, 162, 155
+      next # Title
+    when 108, 209, 524, 420, 413, 115
+      next # Stage direction
+    when 494, 510, 517, 501, 508
+      next # Page number
+    when 54
+      lines = []
+      scenes[s.to_i] = lines
+    when 252, 250, 229
+      if s.upcase != s
+        lines.last << s
+      else
+        char = s.upcase.gsub(" (CONT'D)", '').gsub(" (O.S.)", '').gsub(" (V.O.)", '')
+        lines << "#{char}: " unless char == '(MORE)'
+      end
+    else
+      lines.last << s
+    end
+  end
+end
+dir = File.join(File.dirname(FILE), File.basename(FILE, '.pdf'))
+FileUtils.rm_rf(dir)
+FileUtils.mkdir_p(dir)
+
+scenes.each do |k, v|
+  next if v.empty?
+  next unless v.any? { |s| s =~ /^#{CHAR}: / }
+  v.reject! { |s| s == "#{CHAR}: " }
+  File.write(File.join(dir, "#{k}.txt"), v.join("\n").gsub(/bullet/, 'ball'))
+end
