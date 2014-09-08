@@ -2,6 +2,10 @@
 require 'zlib'
 require 'fileutils'
 
+##################################################################################################
+# An example script to try and convert a PDF film-style script into something usable by line_learn
+##################################################################################################
+
 def usage
   puts "usage: pdf2lines <FILE> <CHAR>"
   exit 1

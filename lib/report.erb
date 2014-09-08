@@ -1,0 +1,38 @@
+<html>
+<head>
+<style>
+td { font-size: 6pt; }
+td.line_num { font-size: 10pt; }
+tr.other_line { color: #DDDDDD; }
+</style>
+</head>
+<body>
+  <h1>Practice Report for <%= script.file %></h1>
+  <h4><%= Time.now %></h4>
+  <h2>TOTAL SCORE: <%= total_score.round(2) %></h2>
+  <table>
+    <% script.lines.each do |line| %>
+      <% scored_line = (Scores === line) %>
+      <tr
+          class="<%= scored_line ? 'my' : 'other' %>_line"
+          <% if scored_line %>
+          style="background-color: <%= score_color_hex(normalized_line_scores[line]) %>"
+          <% end %>
+        >
+        <td class="line_num"><%= line.num %></td>
+        <td class="character"><%= line.character %></td>
+        <% if scored_line %>
+        <td class="line">
+          <% line.words.zip(normalized_word_scores[line]).each do |word, s| %>
+            <span style="font-size: <%= (6 + s * 12).round %>pt"><%= word %></span>
+          <% end %>
+        </td>
+        <td class="score"><%= normalized_line_scores[line].round(2) %></td>
+        <% else %>
+        <td class="line" colspan="2"><%= line.raw %></td>
+        <% end %>
+      </tr>
+    <% end %>
+  </table>
+</body>
+</html>

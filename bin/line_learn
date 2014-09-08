@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.expand_path('../../lib', __FILE__)
+require 'line_learn'
+
+practice = LineLearn::ScriptPractice.new(Dir[*ARGV].first)
+case ARGV.last
+when '--introduce'
+  practice.script.introduce
+  exit 0
+when '--dummy'
+  practice.learn(ARGV, :dummy_data => true)
+else
+  practice.learn(ARGV, :skip_to => ARGV.last)
+end
+practice.report
