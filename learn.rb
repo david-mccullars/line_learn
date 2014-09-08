@@ -361,9 +361,11 @@ end
 
 if $0 == __FILE__
   practice = ScriptPractice.new(Dir[*ARGV].first)
-practice.script.introduce
-exit 0
-  if ARGV.last == '--dummy'
+  case ARGV.last
+  when '--introduce'
+    practice.script.introduce
+    exit 0
+  when '--dummy'
     practice.learn(ARGV, :dummy_data => true)
   else
     practice.learn(ARGV, :skip_to => ARGV.last)
