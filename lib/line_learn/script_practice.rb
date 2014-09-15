@@ -1,3 +1,5 @@
+require 'diff-lcs'
+
 module LineLearn
   class ScriptPractice
 
@@ -65,7 +67,7 @@ module LineLearn
     def read_word(expecting)
       expecting = expecting.gsub(/[^a-zA-Z0-9]/, '').downcase
       word = ''
-      while !word.gsub(/[^a-zA-Z0-9]/, '').downcase.end_with?(expecting)
+      until word_mostly_matches?(word.gsub(/[^a-zA-Z0-9]/, '').downcase, expecting)
         case c = STDIN.getch
         when "\u0003"
           exit
@@ -80,6 +82,18 @@ module LineLearn
         end
       end
       return :success
+    end
+
+    def word_mostly_matches?(word, expecting)
+      if word.size >= expecting.size
+        return true if word.end_with?(expecting)
+
+        w = word.chars.last(expecting.size)
+        diff = Diff::LCS.diff(w, expecting.chars)
+        return true if 0.2 >= diff.flatten.size.to_f / expecting.size
+      end
+
+      false
     end
 
     def total_score
