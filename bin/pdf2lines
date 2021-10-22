@@ -46,13 +46,13 @@ all.scan(/\nstream\n(.*?)\nendstream\n/m) do
       scenes[s.to_i] = lines
     when 252, 250, 229
       if s.upcase != s
-        lines.last << s
+        lines.last << s if lines && lines.last
       else
         char = s.upcase.gsub(" (CONT'D)", '').gsub(" (O.S.)", '').gsub(" (V.O.)", '')
         lines << "#{char}: " unless char == '(MORE)'
       end
     else
-      lines.last << s
+      lines.last << s if lines && lines.last
     end
   end
 end
@@ -62,7 +62,7 @@ FileUtils.mkdir_p(dir)
 
 scenes.each do |k, v|
   next if v.empty?
-  next unless v.any? { |s| s =~ /^#{CHAR}: / }
-  v.reject! { |s| s == "#{CHAR}: " }
+#  next unless v.any? { |s| s =~ /^#{CHAR}: / }
+#  v.reject! { |s| s == "#{CHAR}: " }
   File.write(File.join(dir, "#{k}.txt"), v.join("\n").gsub(/bullet/, 'ball'))
 end

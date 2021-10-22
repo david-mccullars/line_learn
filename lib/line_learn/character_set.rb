@@ -14,7 +14,7 @@ module LineLearn
     end
 
     def color_map
-      @color_map ||= Hash[self.keys.sort.zip(styles)]
+      @color_map ||= Hash[self.keys.sort.zip(styles[1..-1])]
     end
 
     private

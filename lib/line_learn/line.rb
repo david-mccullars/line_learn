@@ -8,7 +8,7 @@ module LineLearn
       @character = character
       @raw = raw
       @sentences = raw.split(/(?<=[.?!])\s+/).map do |sentence|
-        sentence.gsub(/\s*\.\.\.\s*/, ' ... ').split(/\s+/)
+        sentence.gsub(/\s*\.\.\.\s*/, ' ... ').split(/\s+|-+/)
       end
     end
 
